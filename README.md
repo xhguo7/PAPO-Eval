@@ -1,8 +1,8 @@
 # **PAPO: Perception-Aware Policy Optimization for Multimodal Reasoning**
 
 This is the evalaution module for our work [Perception-Aware Policy Optimization for Multimodal Reasoning](https://mikewangwzhl.github.io/PAPO/)
-
-This module is also embedded into [PAPO](https://github.com/MikeWangWZHL/PAPO) for convenient inference and evaluation
+- This module is also embedded into [PAPO](https://github.com/MikeWangWZHL/PAPO) for convenient inference and evaluation
+- Feel free to directly use [PAPO](https://github.com/MikeWangWZHL/PAPO) for complete training-evaluation workflow!
 
 
 
@@ -86,12 +86,13 @@ bash papo_eval/preprocess/preprocess.sh
 
 
 
-# 🥰 **Acknowledgement**
-We adapt [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) to run evaluation for PAPO.
-Huge thanks for providing this awesome foundational codebase!
+## 🥰 **Acknowledgement**
+Huge thanks for providing this awesome codebase!
+- We thank [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory) team for providing this foundational codebase that we adapted to implement model inference and evaluation for PAPO.
 
 
-# 📝 **Citation**
+
+## 📝 **Citation**
 ```bibtex
 @article{wang2025perception,
   title={Perception-Aware Policy Optimization for Multimodal Reasoning},
