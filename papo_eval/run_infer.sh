@@ -16,9 +16,9 @@ DATASET="AI4Math_MathVerse"
 
 ########################  Model  ########################
 # Specify the model version ("best_val" or "last_step")
-MODEL="PAPOGalaxy/PAPO-Qwen2.5-VL-7B"
+MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"
 MODEL_VERSION="best_val"
-MODEL_NAME="PAPOGalaxy-PAPO-Qwen2.5-VL-7B-${MODEL_VERSION}"
+MODEL_NAME="PAPOGalaxy-PAPO-G-Qwen2.5-VL-7B-${MODEL_VERSION}"
 
 ########################  Config  ########################
 SAVE_PATH="infer_outputs/$MODEL_NAME/$DATASET.jsonl"

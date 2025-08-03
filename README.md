@@ -52,8 +52,10 @@ bash papo_eval/preprocess/preprocess.sh
         - *lscpku/LogicVista*: `DATASET="lscpku_LogicVista"`
         - *MMMU/MMMU_Pro*: `DATASET="MMMU_MMMU_Pro"`
     - `Model` (str): PAPO model you would like to run inference
-        - For example: `MODEL="PAPOGalaxy/PAPO-Qwen2.5-VL-7B"`
+        - For example: `MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"`
         - Our model collection on Hugging Face: [PAPO-Qwen](https://huggingface.co/collections/PAPOGalaxy/papo-qwen-686d92dd3d43b1ce698f851a)
+            - PAPO-GRPO model collection: [PAPO-G](https://huggingface.co/collections/PAPOGalaxy/papo-g-688fd55ed6b49f343114ed6e)
+            - PAPO-DAPO model collection: [PAPO-D](https://huggingface.co/collections/PAPOGalaxy/papo-d-688fd5917f3a2ffb715adcca)
     - `MODEL_VERSION` (str): Which version to use for inference
         - We saved both *best_val* and *last_step* for evaluation. Feel free to choose one!
         - Choices: `MODEL_VERSION="best_val"` or `MODEL_VERSION="last_step"`
