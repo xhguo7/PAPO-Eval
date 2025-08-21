@@ -15,9 +15,8 @@ DATASET="AI4Math_MathVerse"
 # DATASET="lscpku_LogicVista"
 
 ########################  Model  ########################
-# Specify the model version ("best_val" or "last_step")
 MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"
-MODEL_VERSION="best_val"
+MODEL_VERSION="last_step"
 MODEL_NAME="PAPOGalaxy-PAPO-G-Qwen2.5-VL-7B-${MODEL_VERSION}"
 
 ########################  Config  ########################

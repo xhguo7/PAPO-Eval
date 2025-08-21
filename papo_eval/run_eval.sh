@@ -3,7 +3,7 @@
 # Inference path: JSONL file path or model inference dir path
 ### - Directly give the JSONL path if eval acc of a specific dataset
 ### - Give only model dir without JSONL path if eval vision-dependent acc
-JSONL_PATH="./infer_outputs/PAPOGalaxy-PAPO-G-Qwen2.5-VL-7B-best_val/hiyouga_geometry3k.jsonl"
+JSONL_PATH="./infer_outputs/PAPOGalaxy-PAPO-G-Qwen2.5-VL-7B/hiyouga_geometry3k.jsonl"
 
 # Default values
 N_ROLLOUT=8
