@@ -172,7 +172,8 @@ def get_dataset_config():
         'hiyouga_geometry3k': 'hiyouga_geometry3k_images.zip',
         'lscpku_LogicVista': 'lscpku_LogicVista_images.zip',
         'MMMU_MMMU_Pro': 'MMMU_MMMU_Pro_images.zip',
-        'We_Math': 'We-Math_We-Math_images.zip'
+        'We_Math': 'We-Math_We-Math_images.zip',
+        'PAPO_MMK12': 'PAPO_MMK12_test_images.zip',
     }
 
 def main():

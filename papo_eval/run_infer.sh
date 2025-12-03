@@ -2,17 +2,18 @@
 set -euo pipefail
 
 # which GPUs to use
-export CUDA_VISIBLE_DEVICES=6,7
+export CUDA_VISIBLE_DEVICES=0,1
 
 ########################  Data  ########################
-# DATASET="hiyouga_geometry3k"
-DATASET="AI4Math_MathVerse"
+DATASET="hiyouga_geometry3k"
+# DATASET="AI4Math_MathVerse"
 # DATASET="AI4Math_MathVista"
 # DATASET="We-Math_We-Math"
 # DATASET="MMMU_MMMU_Pro"
 # DATASET="BUAADreamer_clevr_count_70k"
 # DATASET="AI4Math_MathVerse_vision_dependent"
 # DATASET="lscpku_LogicVista"
+# DATASET="PAPO_MMK12"
 
 ########################  Model  ########################
 MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"

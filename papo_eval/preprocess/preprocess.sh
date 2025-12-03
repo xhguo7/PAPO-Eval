@@ -10,14 +10,15 @@ OUTPUT_DIR="./data"  # If you change this to other places, may need to manually 
 AUTO_UNZIP=true  # Set to true to auto-unzip images and remove ZIP files
 
 # Available dataset splits (uncomment the one you want to download)
-# SPLIT_NAME="hiyouga_geometry3k"
-SPLIT_NAME="AI4Math_MathVerse"
+SPLIT_NAME="hiyouga_geometry3k"
+# SPLIT_NAME="AI4Math_MathVerse"
 # SPLIT_NAME="AI4Math_MathVista"
 # SPLIT_NAME="We_Math"
 # SPLIT_NAME="AI4Math_MathVerse_vision_dependent"
 # SPLIT_NAME="BUAADreamer_clevr_count_70k"
 # SPLIT_NAME="lscpku_LogicVista"
 # SPLIT_NAME="MMMU_MMMU_Pro"
+# SPLIT_NAME="PAPO_MMK12"
 
 
 # =============================================================================

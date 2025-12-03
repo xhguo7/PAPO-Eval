@@ -1,4 +1,18 @@
 {
+  "PAPO_MMK12": {
+    "file_name": "papo/PAPO_MMK12.json",
+    "formatting": "sharegpt",
+    "columns": {
+      "messages": "messages",
+      "images": "images"
+    },
+    "tags": {
+      "role_tag": "role",
+      "content_tag": "content",
+      "user_tag": "user",
+      "assistant_tag": "assistant"
+    }
+  },
   "AI4Math_MathVerse_vision_dependent": {
     "file_name": "papo/AI4Math_MathVerse-vision-dependent.json",
     "formatting": "sharegpt",
