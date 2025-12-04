@@ -12,7 +12,9 @@ This is the evalaution module for our work [Perception-Aware Policy Optimization
 We follow the environment setup instructions from [LLaMA-Factory](https://github.com/hiyouga/LLaMA-Factory):
 ```bash
 cd PAPO-Eval
-pip install -e ".[torch,metrics]" --no-build-isolation
+conda env create -f env.yml
+conda activate papo_eval
+pip install -e ".[all]"
 ```
 
 ## **2. Data Preprocessing**
