@@ -16,9 +16,8 @@ DATASET="hiyouga_geometry3k"
 # DATASET="PAPO_MMK12"
 
 ########################  Model  ########################
-MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"
-MODEL_VERSION="last_step"
-MODEL_NAME="PAPOGalaxy-PAPO-G-Qwen2.5-VL-7B-${MODEL_VERSION}"
+MODEL_NAME="PAPO-G-H-Qwen2.5-VL-3B"
+MODEL="PAPOGalaxy/${MODEL_NAME}"
 
 ########################  Config  ########################
 SAVE_PATH="infer_outputs/$MODEL_NAME/$DATASET.jsonl"
@@ -26,10 +25,9 @@ ROLLOUT_N=8
 
 ########################  Run  ########################
 echo "Running inference for dataset: $DATASET → $SAVE_PATH"
-echo "Using model version: $MODEL_VERSION"
+
 python ./papo_eval/run_infer.py \
   --model_name_or_path "$MODEL" \
-  --model_subfolder "$MODEL_VERSION" \
   --template qwen2_vl \
   --cutoff_len 9216 \
   --max_new_tokens 2048 \

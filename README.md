@@ -33,6 +33,7 @@ All evaluation data can be downloaded from: https://huggingface.co/datasets/PAPO
         - *AI4Math/MathVerse*: `SPLIT_NAME="AI4Math_MathVerse"`
         - *AI4Math/MathVista*: `SPLIT_NAME="AI4Math_MathVista"`
         - *We_Math/We_Math*: `SPLIT_NAME="We_Math"`
+        - *FanqingM/MMK12*: `SPLIT_NAME="PAPO_MMK12"`
         - Vision-dependent subset of *AI4Math/MathVerse*: `SPLIT_NAME="AI4Math_MathVerse_vision_dependent"`
         - *BUAADreamer/clevr_count_70k*: `SPLIT_NAME="BUAADreamer_clevr_count_70k"`
         - *lscpku/LogicVista*: `SPLIT_NAME="lscpku_LogicVista"`
@@ -53,12 +54,13 @@ bash papo_eval/preprocess/preprocess.sh
         - *AI4Math/MathVerse*: `DATASET="AI4Math_MathVerse"`
         - *AI4Math/MathVista*: `DATASET="AI4Math_MathVista"`
         - *We_Math/We_Math*: `DATASET="We-Math_We-Math"`
+        - *FanqingM/MMK12*: `SPLIT_NAME="PAPO_MMK12"`
         - Vision-dependent subset of *AI4Math/MathVerse*: `DATASET="AI4Math_MathVerse_vision_dependent"`
         - *BUAADreamer/clevr_count_70k*: `DATASET="BUAADreamer_clevr_count_70k"`
         - *lscpku/LogicVista*: `DATASET="lscpku_LogicVista"`
         - *MMMU/MMMU_Pro*: `DATASET="MMMU_MMMU_Pro"`
     - `Model` (str): PAPO model you would like to run inference
-        - For example: `MODEL="PAPOGalaxy/PAPO-G-Qwen2.5-VL-7B"`
+        - For example: `MODEL="PAPOGalaxy/PAPO-G-H-Qwen2.5-VL-7B"`
         - Our model collection on Hugging Face: [PAPO-Qwen](https://huggingface.co/collections/PAPOGalaxy/papo-qwen-686d92dd3d43b1ce698f851a)
             - PAPO-GRPO model collection: [PAPO-G](https://huggingface.co/collections/PAPOGalaxy/papo-g-688fd55ed6b49f343114ed6e)
             - PAPO-DAPO model collection: [PAPO-D](https://huggingface.co/collections/PAPOGalaxy/papo-d-688fd5917f3a2ffb715adcca)

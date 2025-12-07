@@ -37,7 +37,7 @@ import os
 def vllm_infer(
     model_name_or_path: str,
     adapter_name_or_path: str = None,
-    model_subfolder: str = None,
+    model_subfolder: str = "last_step",
     dataset: str = "alpaca_en_demo",
     dataset_dir: str = "data",
     template: str = "default",
@@ -73,14 +73,10 @@ def vllm_infer(
     if pipeline_parallel_size > get_device_count():
         raise ValueError("Pipeline parallel size should be smaller than the number of gpus.")
 
-    # Determine the actual model path to use
+    # Load model
     actual_model_path = model_name_or_path
-    if model_subfolder:
-        print(f"Using model subfolder: {model_subfolder}")
-        actual_model_path = model_name_or_path  # Keep original for LlamaFactory
-        vllm_model_path = f"{model_name_or_path}/{model_subfolder}"  # Use subfolder for vLLM
-    else:
-        vllm_model_path = model_name_or_path
+    vllm_model_path = model_name_or_path
+    using_subfolder = False
 
     model_args, data_args, _, generating_args = get_infer_args(
         dict(
@@ -105,50 +101,61 @@ def vllm_infer(
 
     training_args = Seq2SeqTrainingArguments(output_dir="dummy_dir")
     
-    # Load tokenizer with subfolder support if needed
-    if model_subfolder:
-        # Import AutoTokenizer directly for subfolder support
-        from transformers import AutoTokenizer, AutoProcessor
-        try:
-            print(f"Loading tokenizer from subfolder: {model_subfolder}")
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_name_or_path,
-                subfolder=model_subfolder,
-                trust_remote_code=True
-            )
-            
-            # Also load the processor for vision-language models
-            print(f"Loading processor from subfolder: {model_subfolder}")
+    # Load tokenizer
+    tokenizer_module = None
+    tokenizer_load_error = None
+    tokenizer_using_subfolder = False
+    
+    try:
+        print(f"Attempting to load tokenizer from root: {model_name_or_path}")
+        tokenizer_module = load_tokenizer(model_args)
+        print("Successfully loaded tokenizer from root directory")
+    except Exception as e:
+        tokenizer_load_error = e
+        print(f"Failed to load tokenizer from root: {e}")
+        
+        if model_subfolder:
+            print(f"Attempting to load tokenizer from subfolder: {model_subfolder}")
+            from transformers import AutoTokenizer, AutoProcessor
             try:
-                processor = AutoProcessor.from_pretrained(
+                tokenizer = AutoTokenizer.from_pretrained(
                     model_name_or_path,
                     subfolder=model_subfolder,
                     trust_remote_code=True
                 )
-                print("Successfully loaded both tokenizer and processor with subfolder parameter")
-            except Exception as proc_error:
-                print(f"Could not load processor: {proc_error}")
-                print("Trying to load processor without subfolder...")
+                print(f"Successfully loaded tokenizer from subfolder: {model_subfolder}")
+                
+                # Try to load processor
+                processor = None
                 try:
                     processor = AutoProcessor.from_pretrained(
                         model_name_or_path,
+                        subfolder=model_subfolder,
                         trust_remote_code=True
                     )
-                    print("Successfully loaded processor from main repo")
-                except Exception as proc_error2:
-                    print(f"Could not load processor at all: {proc_error2}")
-                    processor = None
-            
-            # Create the tokenizer module dict that LlamaFactory expects
-            tokenizer_module = {"tokenizer": tokenizer, "processor": processor}
-            
-        except Exception as e:
-            print(f"Failed to load tokenizer with subfolder parameter: {e}")
-            print("Falling back to standard tokenizer loading...")
-            # Fallback to standard loading
-            tokenizer_module = load_tokenizer(model_args)
-    else:
-        tokenizer_module = load_tokenizer(model_args)
+                    print(f"Successfully loaded processor from subfolder: {model_subfolder}")
+                except Exception as proc_error:
+                    print(f"Could not load processor from subfolder: {proc_error}")
+                    try:
+                        processor = AutoProcessor.from_pretrained(
+                            model_name_or_path,
+                            trust_remote_code=True
+                        )
+                        print("Successfully loaded processor from root")
+                    except Exception:
+                        print("Could not load processor")
+                
+                tokenizer_module = {"tokenizer": tokenizer, "processor": processor}
+                tokenizer_using_subfolder = True
+                
+            except Exception as subfolder_error:
+                print(f"Failed to load tokenizer from subfolder: {subfolder_error}")
+                raise Exception(f"Could not load tokenizer from root or subfolder: {tokenizer_load_error}")
+        else:
+            raise Exception(f"Could not load tokenizer and no subfolder specified: {tokenizer_load_error}")
+    
+    if tokenizer_module is None:
+        raise Exception("Failed to load tokenizer from any source")
     
     tokenizer = tokenizer_module["tokenizer"]
     template_obj = get_template_and_fix_tokenizer(tokenizer, data_args)
@@ -156,7 +163,7 @@ def vllm_infer(
 
     # Set up vLLM engine arguments
     engine_args = {
-        "model": vllm_model_path,  # Use the full path for vLLM
+        "model": vllm_model_path,
         "trust_remote_code": True,
         "dtype": model_args.infer_dtype,
         "max_model_len": cutoff_len + max_new_tokens,
@@ -173,109 +180,81 @@ def vllm_infer(
         engine_args.update(model_args.vllm_config)
 
     print(f"Initializing vLLM with model path: {vllm_model_path}")
+    llm = None
+    vllm_load_error = None
+    
     try:
         llm = LLM(**engine_args)
-        print("Successfully initialized vLLM engine")
+        print("Successfully initialized vLLM engine from root directory")
     except Exception as e:
-        print(f"Error loading model: {e}")
+        vllm_load_error = e
+        print(f"Error loading model from root {vllm_model_path}: {e}")
+        
+        # If loading from root failed and we have a subfolder specified, try downloading it
         if model_subfolder:
-            print("Trying alternative approach with download and local loading...")
-            # Alternative: Try to download the model files locally first
+            print(f"Root loading failed. Attempting to download and load from subfolder: {model_subfolder}")
+            
+            # vLLM doesn't support HF Hub subfolder syntax, so we need to download it
             try:
-                from huggingface_hub import hf_hub_download, list_repo_files
+                from huggingface_hub import snapshot_download
                 import tempfile
-                import shutil
                 
-                # Create a temporary directory
                 temp_dir = tempfile.mkdtemp()
-                print(f"Downloading model to temporary directory: {temp_dir}")
+                print(f"Downloading model subfolder to temporary directory: {temp_dir}")
                 
-                # List all files in the subfolder
-                try:
-                    repo_files = list_repo_files(repo_id=model_name_or_path)
-                    subfolder_files = [f for f in repo_files if f.startswith(f"{model_subfolder}/")]
-                    print(f"Found {len(subfolder_files)} files in subfolder {model_subfolder}")
-                except Exception as list_error:
-                    print(f"Could not list repo files: {list_error}")
-                    # Fallback: try to download common model files including processor files
-                    subfolder_files = [
-                        f"{model_subfolder}/config.json",
-                        f"{model_subfolder}/tokenizer.json",
-                        f"{model_subfolder}/tokenizer_config.json",
-                        f"{model_subfolder}/special_tokens_map.json",
-                        f"{model_subfolder}/vocab.json",
-                        f"{model_subfolder}/merges.txt",
-                        f"{model_subfolder}/pytorch_model.bin",
-                        f"{model_subfolder}/model.safetensors",
-                        f"{model_subfolder}/generation_config.json",
-                        f"{model_subfolder}/preprocessor_config.json",
-                        f"{model_subfolder}/processor_config.json",
-                        # Add more processor-related files for vision models
-                        f"{model_subfolder}/image_processor_config.json",
-                        # Add safetensors files (might be split)
-                        f"{model_subfolder}/model-00001-of-00001.safetensors",
-                        f"{model_subfolder}/model-00001-of-00002.safetensors",
-                        f"{model_subfolder}/model-00002-of-00002.safetensors",
-                        f"{model_subfolder}/model.safetensors.index.json",
-                        # Add other potential files
-                        f"{model_subfolder}/added_tokens.json",
-                    ]
+                # Download all files from the subfolder
+                downloaded_path = snapshot_download(
+                    repo_id=model_name_or_path,
+                    allow_patterns=f"{model_subfolder}/*",
+                    local_dir=temp_dir,
+                    local_dir_use_symlinks=False
+                )
                 
-                # Download each file
-                downloaded_files = []
-                for file_path in subfolder_files:
-                    try:
-                        # Remove the subfolder prefix for the local filename
-                        local_filename = file_path.replace(f"{model_subfolder}/", "")
-                        local_file_path = os.path.join(temp_dir, local_filename)
-                        
-                        # Download the file
-                        downloaded_file = hf_hub_download(
-                            repo_id=model_name_or_path,
-                            filename=file_path,
-                            local_dir=temp_dir,
-                            local_dir_use_symlinks=False
-                        )
-                        
-                        # Move file to remove subfolder structure
-                        if downloaded_file != local_file_path:
-                            os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
-                            shutil.move(downloaded_file, local_file_path)
-                        
-                        downloaded_files.append(local_filename)
-                        print(f"Downloaded: {local_filename}")
-                        
-                    except Exception as file_error:
-                        print(f"Could not download {file_path}: {file_error}")
-                        continue
+                # The downloaded files will be in temp_dir/model_subfolder/
+                local_model_path = os.path.join(temp_dir, model_subfolder)
                 
-                if downloaded_files:
-                    print(f"Successfully downloaded {len(downloaded_files)} files")
-                    print(f"Model files available in: {temp_dir}")
+                if os.path.exists(local_model_path):
+                    print(f"Successfully downloaded model to: {local_model_path}")
                     
-                    # Try to load processor from the downloaded directory
-                    try:
-                        from transformers import AutoProcessor
-                        processor = AutoProcessor.from_pretrained(temp_dir, trust_remote_code=True)
-                        print("Successfully loaded processor from downloaded directory")
-                        # Update tokenizer_module to include the local processor
-                        if "processor" not in tokenizer_module or tokenizer_module["processor"] is None:
+                    # Verify that config.json exists
+                    config_path = os.path.join(local_model_path, "config.json")
+                    if not os.path.exists(config_path):
+                        raise Exception(f"config.json not found in {local_model_path}")
+                    
+                    print(f"Found config.json at: {config_path}")
+                    
+                    # Try to load processor from the downloaded directory if we don't have one
+                    if tokenizer_module.get("processor") is None:
+                        try:
+                            from transformers import AutoProcessor
+                            processor = AutoProcessor.from_pretrained(local_model_path, trust_remote_code=True)
+                            print("Successfully loaded processor from downloaded directory")
                             tokenizer_module["processor"] = processor
-                    except Exception as proc_error:
-                        print(f"Could not load processor from downloaded directory: {proc_error}")
+                        except Exception as proc_error:
+                            print(f"Could not load processor from downloaded directory: {proc_error}")
                     
                     # Update engine args to use local directory
-                    engine_args["model"] = temp_dir
-                    llm = LLM(**engine_args)
-                    print("Successfully initialized vLLM with downloaded model")
+                    engine_args["model"] = local_model_path
+                    vllm_model_path = local_model_path
+                    
+                    try:
+                        llm = LLM(**engine_args)
+                        print("Successfully initialized vLLM with downloaded model from subfolder")
+                        using_subfolder = True
+                    except Exception as local_load_error:
+                        print(f"Failed to load from downloaded directory: {local_load_error}")
+                        raise Exception(f"Could not load model even after downloading. Error: {local_load_error}")
                 else:
-                    raise Exception("No files were successfully downloaded")
-                
-            except Exception as e2:
-                print(f"Alternative approach also failed: {e2}")
-                raise e
+                    raise Exception(f"Downloaded path does not exist: {local_model_path}")
+                    
+            except Exception as download_error:
+                print(f"Subfolder download and load failed: {download_error}")
+                raise Exception(f"All attempts to load model failed. Root error: {vllm_load_error}, Subfolder download error: {download_error}")
         else:
-            raise e
+            raise Exception(f"Could not load model from {vllm_model_path} and no subfolder specified: {vllm_load_error}")
+    
+    if llm is None:
+        raise Exception("Failed to initialize vLLM engine")
 
     # load datasets
     dataset_module = get_dataset(template_obj, model_args, data_args, training_args, "ppo", **tokenizer_module)
